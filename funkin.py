@@ -67,7 +67,12 @@ class Funkin:
         self.start_thread_arrow_right()
         try:
             while True:
-                sleep(60)
+                im = np.array(pyautogui.screenshot())
+                im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+                for arrow in self.arrows:
+                    arrow.set_frame(im)
+                    
+                # sleep(60)
         except KeyboardInterrupt:
             pass
         self.stop()

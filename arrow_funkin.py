@@ -6,8 +6,7 @@ import pyautogui
 class ArrowFunkin:
 	kernel = np.ones((5, 5), np.uint8)
 	stopped = False
-	action_executing = False
-
+	frame = None
 	def __init__(self, path_template, area_arrow, color, key_action) -> None:
 		self.imTemplate = cv2.cvtColor(cv2.imread(path_template), cv2.COLOR_BGR2GRAY)[
 			int(area_arrow[1]): int(area_arrow[1] + area_arrow[3]),
@@ -28,9 +27,14 @@ class ArrowFunkin:
 		return True
 
 	def get_frame(self) -> np.ndarray:
-		im = np.array(pyautogui.screenshot())
-		return cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+		if self.frame is None:
+			im = np.array(pyautogui.screenshot())
+			return cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+		return self.frame
 
+	def set_frame(self, screenshot):
+		self.frame = screenshot
+     
 	def get_center_obj(self, difference: np.ndarray) -> float:
 		opening = cv2.morphologyEx(difference, cv2.MORPH_OPEN, self.kernel)
 		x, _, w, _ = cv2.boundingRect(opening)
