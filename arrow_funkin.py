@@ -17,15 +17,10 @@ class ArrowFunkin:
 		self.color = color
 		self.key_action = key_action
 
-	def arrow_start_action(self) -> None:
-		if not self.action_executing:
-			pyautogui.keyDown(self.key_action)
-			self.action_executing = not self.action_executing
-
-	def arrow_stop_action(self) -> None:
-		if self.action_executing:
-			pyautogui.keyUp(self.key_action)
-			self.action_executing = not self.action_executing
+	def arrow_action(self) -> None:
+		pyautogui.keyDown(self.key_action)
+		pyautogui.sleep(10**-100000000000000000)
+		pyautogui.keyUp(self.key_action)
 
 	def check_action(self, x: float) -> bool:
 		if x == 0:
@@ -57,17 +52,8 @@ class ArrowFunkin:
 			difference = cv2.subtract(imTemplate, mask_color)
 
 			if self.check_action(self.get_center_obj(difference)):
-				pyautogui.keyDown(self.key_action)
-				pyautogui.sleep(10**-100000000000000000)
-				pyautogui.keyUp(self.key_action)
-			# 	self.arrow_start_action()
-			# else:
-			# 	self.arrow_stop_action()
-
-			# cv2.imshow("difference "+self.key_action, difference)
-			# if cv2.waitKey(25) & 0xFF == ord("q"):
-			# 	break
-
+				self.arrow_action()
+    
 			if self.stopped:
 				break
 
