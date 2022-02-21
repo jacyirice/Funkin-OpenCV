@@ -1,4 +1,6 @@
-old/
+old2/
+v1/
+v2/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

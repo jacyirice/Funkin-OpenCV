@@ -1,95 +1,81 @@
+from threading import Thread
+from time import sleep
+from arrow_funkin import ArrowFunkin
 import cv2
 import numpy as np
 import pyautogui
 
-
 class Funkin:
-    color = [163, 250]
-    kernel = np.ones((5, 5), np.uint8)
-    keydown = ""
-    action_executing = False
+    def __init__(self, path_template="arrows.png", area_arrows=[739, 140, 326, 50], color=[163, 250]) -> None:
+        self.path_template = path_template
+        self.area_arrows = area_arrows
+        self.width_arrow = int(area_arrows[2]/4)
+        self.color = color
+        self.arrows = []
 
-    def __init__(self, pathTemplate="arrows.png", area_setas=[739, 135, 326, 48]) -> None:
-        self.imTemplate = cv2.imread(pathTemplate, 0)
-        self.area_setas = area_setas
-        
-    def arrow_action(self, x: float, width: float) -> None:
-        w_arrow = width / 4
-        if x==0:
-            pass
-        elif x <= w_arrow:
-            self.action("a")
-            print("esquerda")
-        elif x <= w_arrow * 2:
-            self.action("s")
-            print("baixo")
-        elif x <= w_arrow * 3:
-            self.action("w")
-            print("cima")
-        else:
-            self.action("d")
-            print("direita")
+    def start_thread_arrow(self, area_arrow, name_thread, key_action):
+        arrow = ArrowFunkin(path_template=self.path_template,
+                            area_arrow=area_arrow, color=self.color, key_action=key_action)
 
-    def action(self, key: str) -> None:
-        self.keydown = key
-        pyautogui.keyDown(key)
-        pyautogui.sleep(0.1)
-        pyautogui.keyUp(key)
+        t = Thread(target=arrow.start, name=name_thread, args=())
+        t.daemon = True
+        t.start()
+        return arrow
 
-    def check_action(self, center_obj: float, im_setas: np.ndarray) -> None:
-        self.arrow_action(center_obj, im_setas.shape[1])
-
-    def get_center_obj(self, difference: np.ndarray) -> float:
-        opening = cv2.morphologyEx(difference, cv2.MORPH_OPEN, self.kernel)
-        x, _, w, _ = cv2.boundingRect(opening)
-        return x + w / 2
-
-    def get_frame(self) -> np.ndarray:
-        im = np.array(pyautogui.screenshot())
-        return cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-
-    def play(self) -> None:
-        imTemplate = self.imTemplate
-        area_setas = self.area_setas
-        
-        while True:
-            im = self.get_frame()
-
-            im_setas = im[
-                int(area_setas[1]) : int(area_setas[1] + area_setas[3]),
-                int(area_setas[0]) : int(area_setas[0] + area_setas[2]),
-            ]
-            mask_color = cv2.inRange(im_setas, self.color[0], self.color[1])
-
-            difference = cv2.subtract(imTemplate, mask_color)
-
-            center_obj = self.get_center_obj(difference)
-            self.check_action(center_obj, im_setas)
-
-            cv2.imshow("difference", difference)
-            if cv2.waitKey(25) & 0xFF == ord("q"):
-                break
+    def get_area_arrow(self,pos):
+        aux= self.area_arrows.copy()
+        aux[0]= aux[0] + self.width_arrow * pos +20
+        aux[2] = self.width_arrow-40
+        return aux
     
-    def get_color(self,event, y,x, flags, param, *args, **kwargs):
-        if (event == cv2.EVENT_LBUTTONDOWN):
-            self.color = [int(param[x,y]),250]
-            self.imTemplate = cv2.inRange(param, self.color[0], self.color[1])
-            cv2.imwrite("arrows.png", self.imTemplate)
-            print(self.color)
-            
-    def set_area(self) -> None:
-        im = self.get_frame()
-        area_setas = cv2.selectROI(im, False)
-        print(area_setas)
-        im_setas = im[
-            int(area_setas[1]) : int(area_setas[1] + area_setas[3]),
-            int(area_setas[0]) : int(area_setas[0] + area_setas[2]),
-        ]
-        cv2.imshow('Setas',im_setas)
-        cv2.setMouseCallback('Setas',self.get_color, im_setas)
+    def start_thread_arrow_left(self):
+        area_arrow = self.get_area_arrow(0)
+        area_arrow[3]+=15
+        name_thread = "funkin_arrow_left"
+        key_action = "a"
+        self.arrows.append(self.start_thread_arrow(
+            area_arrow, name_thread, key_action))
 
-        cv2.waitKey(0)
+    def start_thread_arrow_down(self):
+        area_arrow = self.get_area_arrow(1)
+        area_arrow[3]+=15
+        name_thread = "funkin_arrow_down"
+        key_action = "s"
+        self.arrows.append(self.start_thread_arrow(
+            area_arrow, name_thread, key_action))
+    
+    def start_thread_arrow_up(self):
+        area_arrow = self.get_area_arrow(2)
+        area_arrow[3]+=15
+        name_thread = "funkin_arrow_up"
+        key_action = "w"
+        self.arrows.append(self.start_thread_arrow(
+            area_arrow, name_thread, key_action))
+    
+    def start_thread_arrow_right(self):
+        area_arrow = self.get_area_arrow(3)
+        area_arrow[3]+=15
+        name_thread = "funkin_arrow_right"
+        key_action = "d"
+        self.arrows.append(self.start_thread_arrow(
+            area_arrow, name_thread, key_action))
+    
+    def start(self):
+        self.start_thread_arrow_left()
+        self.start_thread_arrow_down()
+        self.start_thread_arrow_up()
+        self.start_thread_arrow_right()
+        try:
+            while True:
+                sleep(60)
+        except KeyboardInterrupt:
+            pass
+        self.stop()
         
-        self.area_setas = area_setas
+    def stop(self):
+        for arrow in self.arrows:
+            arrow.stop()
 
-        
+    def set_template(self) -> None:
+        im = np.array(pyautogui.screenshot())
+        cv2.imwrite(self.path_template, im)
